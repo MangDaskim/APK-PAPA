@@ -1,0 +1,4 @@
+[[redirects]]
+  from = "/apk/*"
+  to = "/apk.html"
+  status = 200
