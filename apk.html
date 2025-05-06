@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Detail Aplikasi - APK Downloader</title>
+  <meta name="description" content="Unduh aplikasi versi terbaru secara gratis. Detail dan informasi lengkap APK.">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+</head>
+<body class="bg-gray-100 text-gray-900">
+
+  <header class="bg-blue-600 text-white p-4 text-center text-2xl font-bold shadow">
+    Detail Aplikasi
+  </header>
+
+  <main class="p-4 max-w-2xl mx-auto" id="app-detail">
+    <p>Loading detail aplikasi...</p>
+  </main>
+
+  <script>
+    const sheetURL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQv8m8IE0Iwm6voCxpjuG1o1F6BOJRL4PiZ2dKcVfedZfW6JZXg1qFJb9LlKS-ET79jW1q0h64Z-mFP/pub?output=csv';
+
+    function slugify(text) {
+      return text.toLowerCase().replace(/\s+/g, '-').replace(/[^\w\-]+/g, '');
+    }
+
+    function getSlugFromURL() {
+      const parts = window.location.pathname.split('/');
+      return parts[parts.length - 1];
+    }
+
+    function renderApp(app) {
+      const container = document.getElementById('app-detail');
+      document.title = `${app.name} MOD APK ${app.version}`;
+      const desc = app.description || 'Unduh aplikasi versi terbaru secara gratis.';
+
+      // Update meta description
+      const metaDesc = document.querySelector('meta[name="description"]');
+      if (metaDesc) metaDesc.setAttribute('content', desc);
+
+      // JSON-LD for structured data
+      const jsonLd = {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": app.name,
+        "operatingSystem": "Android",
+        "applicationCategory": app.category || "Tools",
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "USD"
+        },
+        "version": app.version || "",
+        "datePublished": app.update_at || "",
+        "description": app.description || "",
+        "screenshot": app.icon_url || ""
+      };
+      const script = document.createElement('script');
+      script.type = 'application/ld+json';
+      script.textContent = JSON.stringify(jsonLd);
+      document.head.appendChild(script);
+
+      // App display
+      container.innerHTML = `
+        <div class="bg-white p-6 rounded-xl shadow-md">
+          <div class="flex items-center gap-4 mb-4">
+            <img src="${app.icon_url}" class="w-20 h-20 rounded" alt="${app.name}">
+            <div>
+              <h1 class="text-2xl font-bold">${app.name} MOD APK ${app.version}</h1>
+              <p class="text-sm text-gray-500">Update: ${app.update_at}</p>
+            </div>
+          </div>
+          <p class="mb-4">${desc}</p>
+          <p><strong>Ukuran:</strong> ${app.size}</p>
+          <p><strong>Kategori:</strong> ${app.category}</p>
+          <a href="${app.apk_url}" class="mt-4 inline-block bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+            Download APK
+          </a>
+        </div>
+      `;
+    }
+
+    function loadData() {
+      const slug = getSlugFromURL();
+
+      Papa.parse(sheetURL, {
+        download: true,
+        header: true,
+        complete: function(results) {
+          const data = results.data.filter(row => row.name);
+          const found = data.find(app => slugify(app.name) === slug);
+          if (found) {
+            renderApp(found);
+          } else {
+            document.getElementById('app-detail').innerHTML = '<p class="text-red-600">Aplikasi tidak ditemukan.</p>';
+          }
+        }
+      });
+    }
+
+    loadData();
+  </script>
+</body>
+</html>

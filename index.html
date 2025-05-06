@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>APK Downloader</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+</head>
+<body class="bg-gray-100 text-gray-900">
+
+  <header class="bg-blue-600 text-white p-4 text-center text-2xl font-bold shadow">
+    APK Downloader
+  </header>
+
+  <div class="p-4 flex justify-between items-center">
+    <h2 class="text-xl font-semibold">Daftar Aplikasi</h2>
+    <div>
+      <button id="toggleView" class="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300">Tampilkan: Grid</button>
+    </div>
+  </div>
+
+  <main class="p-4">
+    <div id="apk-list" class="grid gap-4 grid-cols-2 sm:grid-cols-2 lg:grid-cols-3"></div>
+  </main>
+
+  <script>
+    const sheetURL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQv8m8IE0Iwm6voCxpjuG1o1F6BOJRL4PiZ2dKcVfedZfW6JZXg1qFJb9LlKS-ET79jW1q0h64Z-mFP/pub?output=csv';
+
+    let isGrid = true;
+
+    document.getElementById('toggleView').addEventListener('click', () => {
+      isGrid = !isGrid;
+      document.getElementById('toggleView').innerText = `Tampilkan: ${isGrid ? 'Grid' : 'List'}`;
+      renderList(window.apks);
+    });
+
+    function slugify(text) {
+      return text.toLowerCase().replace(/\s+/g, '-').replace(/[^\w\-]+/g, '');
+    }
+
+    function createCard(app) {
+      const slug = slugify(app.name || 'unknown');
+      const title = `${app.name} MOD APK ${app.version || ''}`.trim();
+      const baseClass = isGrid
+        ? "bg-white rounded-xl shadow p-4 text-center hover:shadow-lg transition cursor-pointer flex flex-col items-center"
+        : "bg-white rounded-xl shadow p-4 flex items-center gap-4 hover:shadow-lg transition cursor-pointer";
+      const layout = isGrid
+        ? `
+          <img src="${app.icon_url}" class="w-16 h-16 object-cover rounded mb-2">
+          <h3 class="text-lg font-semibold mb-1">${title}</h3>
+          <p class="text-sm text-gray-600">Ukuran: ${app.size}</p>
+        `
+        : `
+          <img src="${app.icon_url}" class="w-16 h-16 object-cover rounded">
+          <div>
+            <h3 class="text-lg font-semibold">${title}</h3>
+            <p class="text-sm text-gray-600">Ukuran: ${app.size}</p>
+          </div>
+        `;
+
+      return `<div class="${baseClass}" onclick="location.href='/apk/${slug}'">${layout}</div>`;
+    }
+
+    function renderList(data) {
+      const container = document.getElementById('apk-list');
+      container.className = isGrid ? "grid gap-4 grid-cols-2 sm:grid-cols-2 lg:grid-cols-3" : "flex flex-col gap-4";
+      container.innerHTML = data.map(createCard).join('');
+    }
+
+    function loadData() {
+      Papa.parse(sheetURL, {
+        download: true,
+        header: true,
+        complete: function(results) {
+          const cleaned = results.data.filter(row => row.name && row.apk_url);
+          cleaned.sort((a, b) => new Date(b.update_at) - new Date(a.update_at));
+          window.apks = cleaned;
+          renderList(cleaned);
+        }
+      });
+    }
+
+    loadData();
+  </script>
+
+</body>
+</html>
